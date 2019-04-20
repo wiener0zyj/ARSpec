@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ARSpec</string>
+    <string name="notice_open_camera">Click to get the description</string>
 </resources>

@@ -11,7 +11,5 @@ public class ARSpecActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arspec);
-
-        btn_camera = (Button) findViewById(R.id.open_camera_button);
     }
 }

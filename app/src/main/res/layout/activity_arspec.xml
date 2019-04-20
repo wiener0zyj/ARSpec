@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".ARSpecActivity"
+    android:id="@+id/ll_main"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,9 +14,11 @@
         android:layout_height="140dp"
         android:layout_gravity="center"
         android:layout_marginTop="200dp"
-        android:background="@drawable/button_circle_shape" />
+        android:background="@drawable/button_circle_shape"
+        android:onClick="openCamera"/>
 
     <TextView
+        android:id="@+id/tv_desp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -25,5 +28,10 @@
         android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold" />
+
+    <FrameLayout
+        android:id="@+id/fl_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"></FrameLayout>
 
 </LinearLayout>

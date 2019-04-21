@@ -12,6 +12,8 @@ import android.view.MotionEvent;
 import android.widget.Toast;
 import android.media.Image;
 import android.graphics.ImageFormat;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 
 import com.google.ar.core.Anchor;
@@ -26,6 +28,16 @@ import com.google.ar.sceneform.ux.TransformableNode;
 import com.google.ar.core.Frame;
 import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.FrameTime;
+
+import com.google.zxing.Result;
+import com.google.zxing.oned.EAN13Reader;
+import com.google.zxing.multi.GenericMultipleBarcodeReader;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.RGBLuminanceSource;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.common.HybridBinarizer;
+
+import java.nio.ByteBuffer;
 
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = ARSpecActivity.class.getSimpleName();
@@ -97,6 +109,34 @@ public class CameraActivity extends AppCompatActivity {
                         if (imageFormat == ImageFormat.YUV_420_888) {
                             Log.d("ImageFormat", "Image format is YUV_420_888");
                         }
+
+
+                        //////////////////////////////////
+                        //decode the bar code
+                        //////////////////////////////////
+                        if(currentImage != null){
+                            EAN13Reader reader_en13 = new EAN13Reader();
+                            GenericMultipleBarcodeReader mbarReader = new GenericMultipleBarcodeReader(reader_en13);
+
+                            //convert bitmap to binarybitmap
+                            ByteBuffer buffer = currentImage.getPlanes()[0].getBuffer();
+                            byte[] bytes = new byte[buffer.capacity()];
+                            buffer.get(bytes);
+                            Bitmap bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
+                            if(bitmapImage != null){
+                                int[] intArray = new int[bitmapImage.getWidth()*bitmapImage.getHeight()];
+                                bitmapImage.getPixels(intArray, 0, bitmapImage.getWidth(), 0, 0, bitmapImage.getWidth(), bitmapImage.getHeight());
+                                LuminanceSource source = new RGBLuminanceSource(bitmapImage.getWidth(), bitmapImage.getHeight(),intArray);
+                                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+
+                                Result[] results = mbarReader.decodeMultiple(bitmap);
+                                for(int i = 0; i < results.length; i++){
+                                    String info = results[i].getText();
+                                }
+                            }
+                        }
+
+
                     }catch(Exception ex){
                         // do nothing
                         Log.e(TAG, "Sceneform Exception");

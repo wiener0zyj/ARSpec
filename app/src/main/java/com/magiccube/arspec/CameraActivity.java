@@ -26,6 +26,8 @@ import com.google.ar.sceneform.rendering.Renderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 import com.google.ar.core.Frame;
+import com.google.ar.core.Session;
+import com.google.ar.core.Config;
 import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.FrameTime;
 
@@ -45,6 +47,9 @@ public class CameraActivity extends AppCompatActivity {
 
     private ArFragment arFragment;
     private ModelRenderable andyRenderable;
+
+    private boolean focusSetted = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -92,14 +97,29 @@ public class CameraActivity extends AppCompatActivity {
                 });
 
         ArSceneView sceneView = arFragment.getArSceneView();
+
+
         // This is important to make sure that the camera stream renders first so that
         // the face mesh occlusion works correctly.
-
         sceneView.setCameraStreamRenderPriority(Renderable.RENDER_PRIORITY_FIRST);
 
         Scene arScene = sceneView.getScene();
         arScene.addOnUpdateListener(
                 (FrameTime frameTime) -> {
+                    ///////////////////////////////
+                    //enable automatic focusing
+                    //////////////////////////////
+                    Session session = sceneView.getSession();
+                    if(session != null && !focusSetted){
+                        Config config = session.getConfig();
+                        config.setFocusMode(Config.FocusMode.AUTO);
+                        session.configure(config);
+                        focusSetted = true;
+                    }
+
+                    ///////////////////////////////
+                    //handle frame
+                    //////////////////////////////
                     Frame currentFrame = null;
                     Image currentImage = null;
                     try{

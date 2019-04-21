@@ -11,6 +11,8 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.Toast;
 import android.media.Image;
+import android.graphics.ImageFormat;
+
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
@@ -40,8 +42,8 @@ public class CameraActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_camera);
 
-        arFragment = new ArFragment();
-        getSupportFragmentManager().beginTransaction().add(R.id.fl_main, arFragment).commit();
+        arFragment = (ArFragment)getSupportFragmentManager().findFragmentById(R.id.fr_main);
+        //getSupportFragmentManager().beginTransaction().add(R.id.fl_main, arFragment).commit();
 
 
         // When you build a Renderable, Sceneform loads its resources in the background while returning
@@ -80,20 +82,32 @@ public class CameraActivity extends AppCompatActivity {
         ArSceneView sceneView = arFragment.getArSceneView();
         // This is important to make sure that the camera stream renders first so that
         // the face mesh occlusion works correctly.
-        //sceneView.setCameraStreamRenderPriority(Renderable.RENDER_PRIORITY_FIRST);
 
-        //Scene arScene = sceneView.getScene();
-        /*arScene.addOnUpdateListener(
+        sceneView.setCameraStreamRenderPriority(Renderable.RENDER_PRIORITY_FIRST);
+
+        Scene arScene = sceneView.getScene();
+        arScene.addOnUpdateListener(
                 (FrameTime frameTime) -> {
+                    Frame currentFrame = null;
+                    Image currentImage = null;
                     try{
-                        Frame currentFrame = sceneView.getArFrame();
-                        Image currentImage = currentFrame.acquireCameraImage();
-                    }catch(com.google.ar.core.exceptions.NotYetAvailableException ex){
+                        currentFrame = sceneView.getArFrame();
+                        currentImage = currentFrame.acquireCameraImage();
+                        int imageFormat = currentImage.getFormat();
+                        if (imageFormat == ImageFormat.YUV_420_888) {
+                            Log.d("ImageFormat", "Image format is YUV_420_888");
+                        }
+                    }catch(Exception ex){
                         // do nothing
+                        Log.e(TAG, "Sceneform Exception");
+                    }finally {
+                        if(currentImage != null){
+                            currentImage.close();
+                        }
                     }
 
                 }
-        );*/
+        );
     }
 
 

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".CameraActivity"
-    android:id="@+id/ll_main"
+    android:id="@+id/fl_main"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="center|center_horizontal|center_vertical">
 
-    <FrameLayout
-        android:id="@+id/fl_main"
+    <fragment android:name="com.google.ar.sceneform.ux.ArFragment"
+        android:id="@+id/fr_main"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></FrameLayout>
+        android:layout_height="match_parent" />
 
-</LinearLayout>
+</FrameLayout>

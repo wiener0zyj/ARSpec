@@ -14,8 +14,7 @@
         android:layout_height="140dp"
         android:layout_gravity="center"
         android:layout_marginTop="200dp"
-        android:background="@drawable/button_circle_shape"
-        android:onClick="openCamera"/>
+        android:background="@drawable/button_circle_shape"/>
 
     <TextView
         android:id="@+id/tv_desp"
@@ -28,10 +27,5 @@
         android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold" />
-
-    <FrameLayout
-        android:id="@+id/fl_main"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"></FrameLayout>
 
 </LinearLayout>

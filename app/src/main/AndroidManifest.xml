@@ -20,6 +20,7 @@
             ARCore. -->
         <meta-data android:name="com.google.ar.core" android:value="required" />
 
+        <activity android:name=".CameraActivity"/>
         <activity android:name=".ARSpecActivity"
             android:label="@string/app_name">
             <intent-filter>
@@ -27,6 +28,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

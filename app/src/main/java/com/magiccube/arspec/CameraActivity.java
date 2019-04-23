@@ -14,7 +14,8 @@ import android.media.Image;
 import android.graphics.ImageFormat;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-
+import android.graphics.YuvImage;
+import android.graphics.Rect;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
@@ -33,13 +34,20 @@ import com.google.ar.sceneform.FrameTime;
 
 import com.google.zxing.Result;
 import com.google.zxing.oned.EAN13Reader;
+import com.google.zxing.oned.MultiFormatUPCEANReader;
 import com.google.zxing.multi.GenericMultipleBarcodeReader;
 import com.google.zxing.LuminanceSource;
 import com.google.zxing.RGBLuminanceSource;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.*;
 
 import java.nio.ByteBuffer;
+import java.io.ByteArrayOutputStream;
+import java.util.Hashtable;
+import java.util.Vector;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = ARSpecActivity.class.getSimpleName();
@@ -47,6 +55,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private ArFragment arFragment;
     private ModelRenderable andyRenderable;
+
 
     private boolean focusSetted = false;
 
@@ -125,34 +134,64 @@ public class CameraActivity extends AppCompatActivity {
                     try{
                         currentFrame = sceneView.getArFrame();
                         currentImage = currentFrame.acquireCameraImage();
-                        int imageFormat = currentImage.getFormat();
-                        if (imageFormat == ImageFormat.YUV_420_888) {
-                            Log.d("ImageFormat", "Image format is YUV_420_888");
-                        }
-
 
                         //////////////////////////////////
                         //decode the bar code
                         //////////////////////////////////
                         if(currentImage != null){
-                            EAN13Reader reader_en13 = new EAN13Reader();
-                            GenericMultipleBarcodeReader mbarReader = new GenericMultipleBarcodeReader(reader_en13);
+                            MultiFormatReader reader = new MultiFormatReader();
+
+                            //configure the hints
+                            final Vector formats=new Vector();
+                            //formats.addElement(BarcodeFormat.UPC_A);
+                            //formats.addElement(BarcodeFormat.UPC_E);
+                            formats.addElement(BarcodeFormat.EAN_13);
+                            //formats.addElement(BarcodeFormat.EAN_8);
+                            //formats.addElement(BarcodeFormat.CODE_128);
+                            Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>();
+                            hints.put(DecodeHintType.CHARACTER_SET, "GBK");
+                            hints.put(DecodeHintType.POSSIBLE_FORMATS,formats);
 
                             //convert bitmap to binarybitmap
-                            ByteBuffer buffer = currentImage.getPlanes()[0].getBuffer();
-                            byte[] bytes = new byte[buffer.capacity()];
-                            buffer.get(bytes);
-                            Bitmap bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
-                            if(bitmapImage != null){
-                                int[] intArray = new int[bitmapImage.getWidth()*bitmapImage.getHeight()];
-                                bitmapImage.getPixels(intArray, 0, bitmapImage.getWidth(), 0, 0, bitmapImage.getWidth(), bitmapImage.getHeight());
-                                LuminanceSource source = new RGBLuminanceSource(bitmapImage.getWidth(), bitmapImage.getHeight(),intArray);
-                                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+                            ByteBuffer yBuffer = currentImage.getPlanes()[0].getBuffer();
+                            ByteBuffer uBuffer = currentImage.getPlanes()[1].getBuffer();
+                            ByteBuffer vBuffer = currentImage.getPlanes()[2].getBuffer();
+                            int ySize = yBuffer.remaining();
+                            int uSize = uBuffer.remaining();
+                            int vSize = vBuffer.remaining();
 
-                                Result[] results = mbarReader.decodeMultiple(bitmap);
-                                for(int i = 0; i < results.length; i++){
-                                    String info = results[i].getText();
+                            byte[] bytes = new byte[ySize + uSize + vSize];
+                            yBuffer.get(bytes, 0, ySize);
+                            vBuffer.get(bytes, ySize, vSize);
+                            uBuffer.get(bytes, ySize + vSize, uSize);
+
+                            int width = currentImage.getWidth();
+                            int height = currentImage.getHeight();
+
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            YuvImage yuv = new YuvImage(bytes, ImageFormat.NV21, width, height, null);
+                            yuv.compressToJpeg(new Rect(0, 0, width, height), 100, out);
+
+                            byte[] byteArray = out.toByteArray();
+                            Bitmap bitmapImage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+                            if(bitmapImage != null){
+                                int[] pixels = new int[bitmapImage.getWidth()*bitmapImage.getHeight()];
+                                bitmapImage.getPixels(pixels, 0, bitmapImage.getWidth(), 0, 0, bitmapImage.getWidth(), bitmapImage.getHeight());
+                                RGBLuminanceSource source = new RGBLuminanceSource(bitmapImage.getWidth(), bitmapImage.getHeight(), pixels);
+                                BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+                                try {
+                                    Result result = reader.decode(bitmap, hints);
+                                    String barCode = result.getText();
+
+                                    //////////////////////////////////
+                                    //get the AR information
+                                    //////////////////////////////////
+                                    new Thread(new fetchInfoFromBarCodeRunnable(barCode)).start();
                                 }
+                                catch (Exception e) {
+                                    Log.e("QrTest", "Error decoding barcode", e);
+                                }
+
                             }
                         }
 
@@ -198,5 +237,24 @@ public class CameraActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+}
+
+class fetchInfoFromBarCodeRunnable implements Runnable{
+    private String param;
+    fetchInfoFromBarCodeRunnable(String param){
+        this.param = param;
+    }
+
+    @Override
+    public void run(){
+        try{
+            String resultJson = HttpUtil.getInstance().sendGet("http://51sd.hppbid.com/service/loveit", param);
+            JSONTokener jsonParser = new JSONTokener(resultJson);
+            JSONObject json = (JSONObject)jsonParser.nextValue();
+            json.getString("name");
+        }catch(Exception e){
+            Log.e("QrTest", "Error fetch barcode information from internet", e);
+        }
     }
 }
